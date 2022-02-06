@@ -28,6 +28,8 @@ print(f'\ndevice: {device}')
     
 parser = argparse.ArgumentParser(description='Following are the arguments that can be passed form the terminal itself ! Cool huh ? :D')
 parser.add_argument('--data_path', type = str, default = 'NIH Chest X-rays', help = 'This is the path of the training data')
+parser.add_argument('--model', type='str', default='resnet50', choices={'alexnet', 'vgg16', 'resnet50'})
+parser.add_argument('--pretrained', action='store_true')
 parser.add_argument('--bs', type = int, default = 128, help = 'batch size')
 parser.add_argument('--lr', type = float, default = 1e-5, help = 'Learning Rate for the optimizer')
 parser.add_argument('--stage', type = int, default = 1, help = 'Stage, it decides which layers of the Neural Net to train')
@@ -115,19 +117,26 @@ if not args.test: # training
     if not args.resume:
         print('\ntraining from scratch')
         # import pretrained model
-        model = models.resnet50(pretrained=True) # pretrained = False bydefault
+        if args.model == 'resnet50':
+            model = models.resnet50(pretrained=args.pretrained)
+        elif args.model == 'alexnet':
+            model = models.alexnet(pretrained=args.pretrained)
+        elif args.model == 'vgg16':
+            model = models.vgg16(pretrained=args.pretrained)
+
         # change the last linear layer
         num_ftrs = model.fc.in_features
         model.fc = nn.Linear(num_ftrs, len(XRayTrain_dataset.all_classes)) # 15 output classes 
         model.to(device)
-        
-        print('----- STAGE 1 -----') # only training 'layer2', 'layer3', 'layer4' and 'fc'
-        for name, param in model.named_parameters(): # all requires_grad by default, are True initially
-            # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters  
-            if ('layer2' in name) or ('layer3' in name) or ('layer4' in name) or ('fc' in name):
-                param.requires_grad = True 
-            else:
-                param.requires_grad = False
+
+        if args.pretrained:  # only training 'layer2', 'layer3', 'layer4' and 'fc'
+            print('freezing some pretrained weights')
+            for name, param in model.named_parameters(): # all requires_grad by default, are True initially
+                # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
+                if ('layer2' in name) or ('layer3' in name) or ('layer4' in name) or ('fc' in name):
+                    param.requires_grad = True
+                else:
+                    param.requires_grad = False
 
         # since we are not resuming the training of the model
         epochs_till_now = 0
@@ -172,21 +181,22 @@ else: # testing
     losses_dict = ckpt['losses_dict']
 
 # make changes(freezing/unfreezing the model's layers) in the following, for training the model for different stages 
-if (not args.test) and (args.resume):
+if not args.test and args.resume:
 
     if stage == 1:
 
         print('\n----- STAGE 1 -----') # only training 'layer2', 'layer3', 'layer4' and 'fc'
         for name, param in model.named_parameters(): # all requires_grad by default, are True initially
-            # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters  
+            # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
             if ('layer2' in name) or ('layer3' in name) or ('layer4' in name) or ('fc' in name):
-                param.requires_grad = True 
+                param.requires_grad = True
             else:
                 param.requires_grad = False
 
     elif stage == 2:
 
         print('\n----- STAGE 2 -----') # only training 'layer3', 'layer4' and 'fc'
+
         for name, param in model.named_parameters(): 
             # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters  
             if ('layer3' in name) or ('layer4' in name) or ('fc' in name):
