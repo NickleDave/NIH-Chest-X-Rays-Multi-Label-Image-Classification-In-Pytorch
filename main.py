@@ -63,7 +63,7 @@ def count_parameters(model):
 XRayTrain_dataset = XRaysTrainDataset(data_dir, transform = config.transform)
 train_percentage = 0.8
 train_dataset, val_dataset = torch.utils.data.random_split(XRayTrain_dataset, [int(len(XRayTrain_dataset)*train_percentage), len(XRayTrain_dataset)-int(len(XRayTrain_dataset)*train_percentage)])
-
+/
 XRayTest_dataset = XRaysTestDataset(data_dir, transform = config.transform)
 
 print('\n-----Initial Dataset Information-----')
@@ -274,11 +274,8 @@ if not args.test:
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr = lr)
 
 # make changes in the parameters of the following 'fit' function
-fit(device, XRayTrain_dataset, train_loader, val_loader,    
-                                        test_loader, model, loss_fn, 
-                                        optimizer, losses_dict,
-                                        epochs = args.epochs,
-                                        log_interval = 25, save_interval = 1)
+fit(device, XRayTrain_dataset, train_loader, val_loader, model, loss_fn, optimizer, losses_dict,
+    epochs = args.epochs, log_interval = 25, save_interval = 1)
 
 script_time = time.time() - script_start_time
 m, s = divmod(script_time, 60)
