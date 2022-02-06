@@ -62,8 +62,10 @@ def count_parameters(model):
 # make the datasets
 XRayTrain_dataset = XRaysTrainDataset(data_dir, transform = config.transform)
 train_percentage = 0.8
-train_dataset, val_dataset = torch.utils.data.random_split(XRayTrain_dataset, [int(len(XRayTrain_dataset)*train_percentage), len(XRayTrain_dataset)-int(len(XRayTrain_dataset)*train_percentage)])
-/
+n_train = int(len(XRayTrain_dataset)*train_percentage)
+n_val = len(XRayTrain_dataset) - int(len(XRayTrain_dataset) * train_percentage)
+train_dataset, val_dataset = torch.utils.data.random_split(XRayTrain_dataset, [n_train, n_val])
+
 XRayTest_dataset = XRaysTestDataset(data_dir, transform = config.transform)
 
 print('\n-----Initial Dataset Information-----')
