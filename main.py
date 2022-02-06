@@ -8,7 +8,7 @@ import torchvision.models as models
 
 from datasets import XRaysTrainDataset  
 from datasets import XRaysTestDataset
-from trainer import fit
+from trainer import fit, eval_
 import config
 
 def q(text = ''): # easy way to exiting the script. useful while debugging
@@ -197,8 +197,7 @@ else: # testing
     # loading previous loss lists to collect future losses
     losses_dict = ckpt['losses_dict']
 
-    eval(device, test_loader, model,
-         loss_fn, log_interval = 1)
+    eval_(device, test_loader, model, loss_fn, log_interval = 1)
 
 # make changes(freezing/unfreezing the model's layers) in the following, for training the model for different stages 
 if not args.test and args.resume:
