@@ -117,8 +117,13 @@ if not args.test: # training
             model = models.vgg16(pretrained=args.pretrained)
 
         # change the last linear layer
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, len(XRayTrain_dataset.all_classes)) # 15 output classes 
+        num_classes = len(XRayTrain_dataset.all_classes)
+        if args.model == 'resnet50':
+            num_ftrs = model.fc.in_features
+            model.fc = nn.Linear(num_ftrs, num_classes)
+        else:
+            num_ftrs = model.classifier[6].in_features
+            model.classifier[6] = nn.Linear(num_ftrs, num_classes)
         model.to(device)
 
         if args.pretrained:  # only training 'layer2', 'layer3', 'layer4' and 'fc'
