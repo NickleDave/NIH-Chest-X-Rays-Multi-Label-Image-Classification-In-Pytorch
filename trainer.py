@@ -11,6 +11,7 @@ from sklearn.metrics import roc_auc_score
 
 import config
 
+
 def get_roc_auc_score(y_true, y_probs):
     '''
     Uses roc_auc_score function from sklearn.metrics to calculate the micro ROC AUC score for a given y_true and y_probs.
@@ -21,12 +22,9 @@ def get_roc_auc_score(y_true, y_probs):
     
     NoFindingIndex = all_classes.index('No Finding')
 
-    if True:
-        print('\nNoFindingIndex: ', NoFindingIndex)
-        print('y_true.shape, y_probs.shape ', y_true.shape, y_probs.shape)
-        GT_and_probs = {'y_true': y_true, 'y_probs': y_probs}
-        with open('GT_and_probs', 'wb') as handle:
-            pickle.dump(GT_and_probs, handle, protocol = pickle.HIGHEST_PROTOCOL)
+    print('\nNoFindingIndex: ', NoFindingIndex)
+    print('y_true.shape, y_probs.shape ', y_true.shape, y_probs.shape)
+    GT_and_probs = {'y_true': y_true, 'y_probs': y_probs}
 
     class_roc_auc_list = []    
     useful_classes_roc_auc_list = []
@@ -40,7 +38,9 @@ def get_roc_auc_score(y_true, y_probs):
         print('\nclass_roc_auc_list: ', class_roc_auc_list)
         print('\nuseful_classes_roc_auc_list', useful_classes_roc_auc_list)
 
-    return np.mean(np.array(useful_classes_roc_auc_list))
+    roc_auc = np.mean(np.array(useful_classes_roc_auc_list))
+    return GT_and_probs, roc_auc
+
 
 def make_plot(epoch_train_loss, epoch_val_loss, total_train_loss_list, total_val_loss_list, save_name):
     '''
@@ -77,32 +77,8 @@ def make_plot(epoch_train_loss, epoch_val_loss, total_train_loss_list, total_val
     ax4.set_ylabel('batch val loss')
     ax4.plot(total_val_loss_list)
     
-    plt.savefig(os.path.join(config.models_dir,'losses_{}.png'.format(save_name)))
+    return fig
 
-def get_resampled_train_val_dataloaders(XRayTrain_dataset, transform, bs):
-    '''
-    Resamples the XRaysTrainDataset class object and returns a training and a validation dataloaders, by splitting the sampled dataset in 80-20 ratio.
-    '''
-    XRayTrain_dataset.resample()
-
-    train_percentage = 0.8
-    train_dataset, val_dataset = torch.utils.data.random_split(XRayTrain_dataset, [int(len(XRayTrain_dataset)*train_percentage), len(XRayTrain_dataset)-int(len(XRayTrain_dataset)*train_percentage)])
-
-    print('\n-----Resampled Dataset Information-----')
-    print('num images in train_dataset   : {}'.format(len(train_dataset)))
-    print('num images in val_dataset     : {}'.format(len(val_dataset)))
-    print('---------------------------------------')
-
-    # make dataloaders
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = bs, shuffle = True)
-    val_loader   = torch.utils.data.DataLoader(val_dataset,   batch_size = bs, shuffle = not True)
-
-    print('\n-----Resampled Batchloaders Information -----')
-    print('num batches in train_loader: {}'.format(len(train_loader)))
-    print('num batches in val_loader  : {}'.format(len(val_loader)))
-    print('---------------------------------------------\n')
-
-    return train_loader, val_loader
     
 def train_epoch(device, train_loader, model, loss_fn, optimizer, epochs_till_now, final_epoch, log_interval):
     '''
@@ -112,7 +88,7 @@ def train_epoch(device, train_loader, model, loss_fn, optimizer, epochs_till_now
     Also prints the loss and the ROC AUC score for the batches, after every 'log_interval' batches. 
     '''
     model.train()
-    
+
     running_train_loss = 0
     train_loss_list = []
 
@@ -122,7 +98,7 @@ def train_epoch(device, train_loader, model, loss_fn, optimizer, epochs_till_now
 
         img = img.to(device)
         target = target.to(device)
-        
+
         optimizer.zero_grad()    
         out = model(img)        
         loss = loss_fn(out, target)
@@ -163,8 +139,8 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
     val_loader_examples_num = len(val_loader.dataset)
 
     probs = np.zeros((val_loader_examples_num, 15), dtype = np.float32)
-    gt    = np.zeros((val_loader_examples_num, 15), dtype = np.float32)
-    k=0
+    gt = np.zeros((val_loader_examples_num, 15), dtype = np.float32)
+    k = 0
 
     with torch.no_grad():
         batch_start_time = time.time()
@@ -199,7 +175,11 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
 
             batch_start_time = time.time()    
 
-    roc_auc = get_roc_auc_score(gt, probs)
+    GT_and_probs, roc_auc = get_roc_auc_score(gt, probs)
+
+    with open(f'{model.__class__.__name__}.GT_and_probs', 'wb') as handle:
+        pickle.dump(GT_and_probs, handle, protocol = pickle.HIGHEST_PROTOCOL)
+
     return val_loss_list, running_val_loss/float(len(val_loader.dataset)), roc_auc
 
 def fit(device, train_loader, val_loader, model,
@@ -268,7 +248,14 @@ def fit(device, train_loader, val_loader, model,
                 print(f"ROC AUC improved, saving 'best' checkpoint: {save_path}")
                 torch.save(ckpt, save_path)
 
-            make_plot(epoch_train_loss, epoch_val_loss, total_train_loss_list, total_val_loss_list, save_name)
+            fig = make_plot(epoch_train_loss,
+                            epoch_val_loss,
+                            total_train_loss_list,
+                            total_val_loss_list,
+                            save_name)
+            fig.savefig(os.path.join(config.models_dir,
+                                     f'{model.__class__.__name__}.losses_{save_name}.png')
+                        )
             print('loss plots saved !!!')
 
         print('\nTRAIN LOSS : {}'.format(mean_running_train_loss))
