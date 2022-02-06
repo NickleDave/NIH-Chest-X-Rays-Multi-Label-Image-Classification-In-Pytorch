@@ -149,7 +149,7 @@ def train_epoch(device, train_loader, model, loss_fn, optimizer, epochs_till_now
             
     return train_loss_list, running_train_loss / float(len(train_loader.dataset))
 
-def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_epoch = None, log_interval = 1, test_only = False):
+def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_epoch = None, log_interval = 1):
     '''
     It essentially takes in the val_loader/test_loader, the model and the loss function and evaluates
     the loss and the ROC AUC score for all the data in the dataloader.
@@ -170,31 +170,24 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
         batch_start_time = time.time()
         pbar = tqdm(val_loader)
         for batch_idx, (img, target) in enumerate(pbar):
-            if test_only:
-                per = ((batch_idx+1)/len(val_loader))*100
-                a_, b_ = divmod(per, 1)
-                pbar.set_description(
-                    f'{str(batch_idx+1).zfill(len(str(len(val_loader))))}/{str(len(val_loader)).zfill(len(str(len(val_loader))))} ({str(int(a_)).zfill(2)}.{str(int(100*b_)).zfill(2)} %)', end = '\r')
-
             img = img.to(device)
             target = target.to(device)    
-    
+
             out = model(img)        
             loss = loss_fn(out, target)    
             running_val_loss += loss.item()*img.shape[0]
             val_loss_list.append(loss.item())
 
-            # storing model predictions for metric evaluat`ion 
+            # storing model predictions for metric evaluation
             probs[k: k + out.shape[0], :] = out.cpu()
-            gt[   k: k + out.shape[0], :] = target.cpu()
+            gt[k: k + out.shape[0], :] = target.cpu()
             k += out.shape[0]
 
-            if ((batch_idx+1)%log_interval == 0) and (not test_only):
-                # ^^ only when ((batch_idx + 1) is divisible by log_interval) and (when test_only = False)
+            if (batch_idx + 1) % log_interval == 0:
                 batch_time = time.time() - batch_start_time
                 m, s = divmod(batch_time, 60)
                 pbar.set_description(
-                    'Val Loss   for batch {}/{} @epoch{}/{}: {} in {} mins {} secs'.format(
+                    'Val Loss for batch {}/{} @epoch{}/{}: {} in {} mins {} secs'.format(
                         str(batch_idx+1).zfill(3),
                         str(len(val_loader)).zfill(3),
                         epochs_till_now,
@@ -203,17 +196,15 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
                         int(m),
                         round(s, 2))
                 )
-            
-            batch_start_time = time.time()    
-            
-    # metric scenes
-    roc_auc = get_roc_auc_score(gt, probs)
 
+            batch_start_time = time.time()    
+
+    roc_auc = get_roc_auc_score(gt, probs)
     return val_loss_list, running_val_loss/float(len(val_loader.dataset)), roc_auc
 
-def fit(device, train_loader, val_loader, test_loader, model,
+def fit(device, train_loader, val_loader, model,
         loss_fn, optimizer, losses_dict, epochs_till_now, epochs,
-        log_interval, save_interval, test_only = False):
+        log_interval, save_interval):
     '''
     Trains or Tests the 'model' on the given 'train_loader', 'val_loader', 'test_loader' for 'epochs' number of epochs.
     If training ('test_only' = False), it saves the optimized 'model' and  the loss plots ,after every 'save_interval'th epoch.
@@ -221,15 +212,6 @@ def fit(device, train_loader, val_loader, test_loader, model,
     epoch_train_loss, epoch_val_loss, total_train_loss_list, total_val_loss_list = losses_dict['epoch_train_loss'], losses_dict['epoch_val_loss'], losses_dict['total_train_loss_list'], losses_dict['total_val_loss_list']
 
     final_epoch = epochs_till_now + epochs
-
-    if test_only:
-        print('\n======= Testing... =======\n')
-        test_start_time = time.time()
-        test_loss, mean_running_test_loss, test_roc_auc = val_epoch(device, test_loader, model, loss_fn, log_interval, test_only = test_only)
-        total_test_time = time.time() - test_start_time
-        m, s = divmod(total_test_time, 60)
-        print('test_roc_auc: {} in {} mins {} secs'.format(test_roc_auc, int(m), int(s)))
-        sys.exit()
 
     print('\n======= Training after epoch #{}... =======\n'.format(epochs_till_now))
 
@@ -297,3 +279,18 @@ def fit(device, train_loader, val_loader, test_loader, model,
         m, s = divmod(total_epoch_time, 60)
         h, m = divmod(m, 60)
         print('\nEpoch {}/{} took {} h {} m'.format(epochs_till_now, final_epoch, int(h), int(m)))
+
+
+def eval(device, test_loader, model,
+         loss_fn, log_interval):
+    '''
+    Trains or Tests the 'model' on the given 'train_loader', 'val_loader', 'test_loader' for 'epochs' number of epochs.
+    If training ('test_only' = False), it saves the optimized 'model' and  the loss plots ,after every 'save_interval'th epoch.
+    '''
+    print('\n======= Testing... =======\n')
+    test_start_time = time.time()
+    test_loss, mean_running_test_loss, test_roc_auc = val_epoch(device, test_loader, model, loss_fn, log_interval)
+    total_test_time = time.time() - test_start_time
+    m, s = divmod(total_test_time, 60)
+    print('test_roc_auc: {} in {} mins {} secs'.format(test_roc_auc, int(m), int(s)))
+    sys.exit()
