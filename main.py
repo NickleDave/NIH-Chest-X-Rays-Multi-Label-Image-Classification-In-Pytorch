@@ -277,7 +277,7 @@ optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr
 
 # make changes in the parameters of the following 'fit' function
 fit(device, train_loader, val_loader, model, loss_fn, optimizer, losses_dict,
-    epochs = args.epochs, log_interval = 25, save_interval = 1)
+    epochs_till_now = epochs_till_now, epochs = args.epochs, log_interval = 25, save_interval = 1)
 script_time = time.time() - script_start_time
 m, s = divmod(script_time, 60)
 h, m = divmod(m, 60)
