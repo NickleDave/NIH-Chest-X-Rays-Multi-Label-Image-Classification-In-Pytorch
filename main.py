@@ -233,7 +233,10 @@ if not args.test:
     print('\nfollowing are the trainable layers...')
     print(trainable_layers)
 
-    print('\nwe have {} Million trainable parameters here in the {} model'.format(count_parameters(model), model.__class__.__name__))
+    print('\nwe have {} Million trainable parameters here in the {} model'.format(
+        count_parameters(model),
+        model.__class__.__name__)
+    )
 
 optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr = lr)
 
