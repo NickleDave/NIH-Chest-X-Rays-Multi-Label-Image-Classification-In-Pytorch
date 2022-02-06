@@ -132,13 +132,14 @@ if not args.test: # training
         model.to(device)
 
         if args.pretrained:  # only training 'layer2', 'layer3', 'layer4' and 'fc'
-            print('freezing some pretrained weights')
-            for name, param in model.named_parameters(): # all requires_grad by default, are True initially
-                # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
-                if ('layer2' in name) or ('layer3' in name) or ('layer4' in name) or ('fc' in name):
-                    param.requires_grad = True
-                else:
-                    param.requires_grad = False
+            if args.model == 'resnet50':
+                print('freezing some pretrained weights of resnet50 model')
+                for name, param in model.named_parameters(): # all requires_grad by default, are True initially
+                    # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
+                    if ('layer2' in name) or ('layer3' in name) or ('layer4' in name) or ('fc' in name):
+                        param.requires_grad = True
+                    else:
+                        param.requires_grad = False
 
         # since we are not resuming the training of the model
         epochs_till_now = 0
@@ -188,44 +189,55 @@ if not args.test and args.resume:
     if stage == 1:
 
         print('\n----- STAGE 1 -----') # only training 'layer2', 'layer3', 'layer4' and 'fc'
-        for name, param in model.named_parameters(): # all requires_grad by default, are True initially
-            # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
-            if ('layer2' in name) or ('layer3' in name) or ('layer4' in name) or ('fc' in name):
-                param.requires_grad = True
-            else:
-                param.requires_grad = False
+        if args.model == 'resnet50':
+            for name, param in model.named_parameters(): # all requires_grad by default, are True initially
+                # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
+                if ('layer2' in name) or ('layer3' in name) or ('layer4' in name) or ('fc' in name):
+                    param.requires_grad = True
+                else:
+                    param.requires_grad = False
+        else:
+            print(f'no stages for model: {args.model}')
 
     elif stage == 2:
 
         print('\n----- STAGE 2 -----') # only training 'layer3', 'layer4' and 'fc'
 
-        for name, param in model.named_parameters(): 
-            # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters  
-            if ('layer3' in name) or ('layer4' in name) or ('fc' in name):
-                param.requires_grad = True 
-            else:
-                param.requires_grad = False
+        if args.model == 'resnet50':
+            for name, param in model.named_parameters():
+                # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
+                if ('layer3' in name) or ('layer4' in name) or ('fc' in name):
+                    param.requires_grad = True
+                else:
+                    param.requires_grad = False
+        else:
+            print(f'no stages for model: {args.model}')
 
     elif stage == 3:
 
         print('\n----- STAGE 3 -----') # only training  'layer4' and 'fc'
-        for name, param in model.named_parameters(): 
-            # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters  
-            if ('layer4' in name) or ('fc' in name):
-                param.requires_grad = True 
-            else:
-                param.requires_grad = False
+        if args.model == 'resnet50':
+            for name, param in model.named_parameters():
+                # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
+                if ('layer4' in name) or ('fc' in name):
+                    param.requires_grad = True
+                else:
+                    param.requires_grad = False
+        else:
+            print(f'no stages for model: {args.model}')
 
     elif stage == 4:
 
         print('\n----- STAGE 4 -----') # only training 'fc'
-        for name, param in model.named_parameters(): 
-            # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters  
-            if ('fc' in name):
-                param.requires_grad = True 
-            else:
-                param.requires_grad = False
-
+        if args.model == 'resnet50':
+            for name, param in model.named_parameters():
+                # print('{}: {}'.format(name, param.requires_grad)) # this shows True for all the parameters
+                if ('fc' in name):
+                    param.requires_grad = True
+                else:
+                    param.requires_grad = False
+        else:
+            print(f'no stages for model: {args.model}')
 
 if not args.test:
     # checking the layers which are going to be trained (irrespective of args.resume)
