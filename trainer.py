@@ -264,14 +264,9 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
         total_train_loss_list.extend(train_loss)
         total_val_loss_list.extend(val_loss)
 
-        save_name = '{}.stage{}_{}_{}'.format(model.__class__.__name__,
-                                              stage,
-                                              str.split(str(lr), '.')[-1],
-                                              str(epochs_till_now).zfill(2)
-                                              )
-
-        if ((epoch+1)%save_interval == 0) or test_only:
-            save_path = os.path.join(config.models_dir, '{}.pth'.format(save_name))
+        if epoch+1 % save_interval == 0:
+            save_name = model.__class__.__name__
+            save_path = os.path.join(config.models_dir, f'{save_name}.pth')
             ckpt = {
                 'epochs': epochs_till_now,
                 'model': model, # it saves the whole model
@@ -281,7 +276,7 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
                                 'total_val_loss_list': total_val_loss_list}
             }
             torch.save(ckpt, save_path)
-            
+
             print('\ncheckpoint {} saved'.format(save_path))
 
             if roc_auc > best_roc_auc:
