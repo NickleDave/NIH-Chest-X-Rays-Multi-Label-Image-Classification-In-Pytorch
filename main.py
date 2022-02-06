@@ -18,7 +18,7 @@ def q(text = ''): # easy way to exiting the script. useful while debugging
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 print(f'\ndevice: {device}')
     
-parser = argparse.ArgumentParser(description='Following are the arguments that can be passed form the terminal itself ! Cool huh ? :D')
+parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', type=str, default = 'NIH Chest X-rays', help = 'This is the path of the training data')
 parser.add_argument('--model', type=str, default='resnet50', choices={'alexnet', 'vgg16', 'resnet50'})
 parser.add_argument('--pretrained', action='store_true')
@@ -26,6 +26,7 @@ parser.add_argument('--bs', type = int, default = 128, help = 'batch size')
 parser.add_argument('--lr', type = float, default = 1e-5, help = 'Learning Rate for the optimizer')
 parser.add_argument('--num-workers', type=int, default=4)
 parser.add_argument('--stage', type = int, default = 1, help = 'Stage, it decides which layers of the Neural Net to train')
+parser.add_argument('--epochs', type = int, default=100)
 parser.add_argument('--loss_func', type = str, default = 'FocalLoss', choices = {'BCE', 'FocalLoss'}, help = 'loss function')
 parser.add_argument('-r','--resume', action = 'store_true') # args.resume will return True if -r or --resume is used in the terminal
 parser.add_argument('--ckpt', type = str, help = 'Path of the ckeckpoint that you wnat to load')
@@ -248,7 +249,7 @@ optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr
 fit(device, XRayTrain_dataset, train_loader, val_loader,    
                                         test_loader, model, loss_fn, 
                                         optimizer, losses_dict,
-                                        epochs_till_now = epochs_till_now, epochs = 3,
+                                        epochs_till_now = epochs_till_now, epochs = args.epochs,
                                         log_interval = 25, save_interval = 1,
                                         lr = lr, bs = batch_size, stage = stage,
                                         test_only = args.test)
