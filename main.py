@@ -33,7 +33,7 @@ parser.add_argument('--ckpt', type = str, help = 'Path of the ckeckpoint that yo
 parser.add_argument('-t','--test', action = 'store_true')   # args.test   will return True if -t or --test   is used in the terminal
 args = parser.parse_args()
 
-if args.resume and args.test: # what if --test is not defiend at all ? test case hai ye ek
+if args.resume and args.test:
     q('The flow of this code has been designed either to train the model or to test it.\nPlease choose either --resume or --test')
 
 stage = args.stage
@@ -104,6 +104,10 @@ if args.loss_func == 'FocalLoss': # by default
     loss_fn = FocalLoss(device = device, gamma = 2.).to(device)
 elif args.loss_func == 'BCE':
     loss_fn = nn.BCEWithLogitsLoss().to(device)
+else:
+    raise ValueError(
+        f'invalid loss function: {args.loss_func}'
+    )
 
 # define the learning rate
 lr = args.lr
@@ -121,6 +125,10 @@ if not args.test: # training
             model = models.alexnet(pretrained=args.pretrained)
         elif args.model == 'vgg16':
             model = models.vgg16(pretrained=args.pretrained)
+        else:
+            raise ValueError(
+                f'invalid model name: {args.model}'
+            )
 
         # change the last linear layer
         num_classes = len(XRayTrain_dataset.all_classes)
@@ -146,7 +154,12 @@ if not args.test: # training
         epochs_till_now = 0
 
         # making empty lists to collect all the losses
-        losses_dict = {'epoch_train_loss': [], 'epoch_val_loss': [], 'total_train_loss_list': [], 'total_val_loss_list': []}
+        losses_dict = {
+            'epoch_train_loss': [],
+            'epoch_val_loss': [],
+            'total_train_loss_list': [],
+            'total_val_loss_list': []
+        }
 
     else:
         if args.ckpt == None:
@@ -183,6 +196,9 @@ else: # testing
     
     # loading previous loss lists to collect future losses
     losses_dict = ckpt['losses_dict']
+
+    eval(device, test_loader, model,
+         loss_fn, log_interval = 1)
 
 # make changes(freezing/unfreezing the model's layers) in the following, for training the model for different stages 
 if not args.test and args.resume:
@@ -262,15 +278,13 @@ optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr
 fit(device, XRayTrain_dataset, train_loader, val_loader,    
                                         test_loader, model, loss_fn, 
                                         optimizer, losses_dict,
-                                        epochs_till_now = epochs_till_now, epochs = args.epochs,
-                                        log_interval = 25, save_interval = 1,
-                                        lr = lr, bs = batch_size, stage = stage,
-                                        test_only = args.test)
+                                        epochs = args.epochs,
+                                        log_interval = 25, save_interval = 1)
 
 script_time = time.time() - script_start_time
 m, s = divmod(script_time, 60)
 h, m = divmod(m, 60)
-print('{} h {}m laga poore script me !'.format(int(h), int(m)))
+print('script run time: {} h {}m'.format(int(h), int(m)))
 
 # ''' 
 # This is how the model is trained...
