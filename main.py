@@ -24,6 +24,7 @@ parser.add_argument('--model', type=str, default='resnet50', choices={'alexnet',
 parser.add_argument('--pretrained', action='store_true')
 parser.add_argument('--bs', type = int, default = 128, help = 'batch size')
 parser.add_argument('--lr', type = float, default = 1e-5, help = 'Learning Rate for the optimizer')
+parser.add_argument('--num-workers', type=int, default=4)
 parser.add_argument('--stage', type = int, default = 1, help = 'Stage, it decides which layers of the Neural Net to train')
 parser.add_argument('--loss_func', type = str, default = 'FocalLoss', choices = {'BCE', 'FocalLoss'}, help = 'loss function')
 parser.add_argument('-r','--resume', action = 'store_true') # args.resume will return True if -r or --resume is used in the terminal
@@ -72,9 +73,12 @@ print('-------------------------------------')
 
 # make the dataloaders
 batch_size = args.bs # 128 by default
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
-val_loader = torch.utils.data.DataLoader(val_dataset, batch_size = batch_size, shuffle = not True)
-test_loader = torch.utils.data.DataLoader(XRayTest_dataset, batch_size = batch_size, shuffle = not True)
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = batch_size,
+                                           shuffle = True, num_workers=args.num_workers)
+val_loader = torch.utils.data.DataLoader(val_dataset, batch_size = batch_size,
+                                         shuffle = False, num_workers=args.num_workers)
+test_loader = torch.utils.data.DataLoader(XRayTest_dataset, batch_size = batch_size,
+                                          shuffle = False,  num_workers=args.num_workers)
 
 print('\n-----Initial Batchloaders Information -----')
 print('num batches in train_loader: {}'.format(len(train_loader)))
