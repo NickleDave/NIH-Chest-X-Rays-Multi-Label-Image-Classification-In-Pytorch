@@ -264,7 +264,7 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
         total_train_loss_list.extend(train_loss)
         total_val_loss_list.extend(val_loss)
 
-        if epoch+1 % save_interval == 0:
+        if (epoch +1) % save_interval == 0:
             save_name = model.__class__.__name__
             save_path = os.path.join(config.models_dir, f'{save_name}.pth')
             ckpt = {
