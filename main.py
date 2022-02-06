@@ -112,8 +112,9 @@ if not args.test: # training
 
     # initialize the model if not args.resume
     if not args.resume:
-        print('\ntraining from scratch')
+        print('\nnot loading checkpoint')
         # import pretrained model
+        print(f'Loading model: {args.model}. Weights pre-trained on ImageNet: {args.pretrained}')
         if args.model == 'resnet50':
             model = models.resnet50(pretrained=args.pretrained)
         elif args.model == 'alexnet':
