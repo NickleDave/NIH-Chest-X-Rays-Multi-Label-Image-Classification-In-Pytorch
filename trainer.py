@@ -6,7 +6,7 @@ import sys, os, time
 import numpy as np
 import torch
 import pickle
-import tqdm
+from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
 
 import config
