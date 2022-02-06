@@ -212,10 +212,8 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
     return val_loss_list, running_val_loss/float(len(val_loader.dataset)), roc_auc
 
 def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
-                                         loss_fn, optimizer, losses_dict,
-                                         epochs_till_now, epochs, 
-                                         log_interval, save_interval, 
-                                         lr, bs, stage, test_only = False):
+        loss_fn, optimizer, losses_dict, epochs_till_now, epochs,
+        log_interval, save_interval, lr, bs, stage, test_only = False):
     '''
     Trains or Tests the 'model' on the given 'train_loader', 'val_loader', 'test_loader' for 'epochs' number of epochs.
     If training ('test_only' = False), it saves the optimized 'model' and  the loss plots ,after every 'save_interval'th epoch.
@@ -235,12 +233,6 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
 
     starting_epoch  = epochs_till_now
     print('\n======= Training after epoch #{}... =======\n'.format(epochs_till_now))
-
-    # epoch_train_loss = []
-    # epoch_val_loss = []
-    
-    # total_train_loss_list = []
-    # total_val_loss_list = []
 
     for epoch in range(epochs):
 
@@ -276,9 +268,12 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
         total_train_loss_list.extend(train_loss)
         total_val_loss_list.extend(val_loss)
 
-        save_name = 'stage{}_{}_{}'.format(stage, str.split(str(lr), '.')[-1], str(epochs_till_now).zfill(2))
+        save_name = '{}.stage{}_{}_{}'.format(model.__class__.__name__,
+                                              stage,
+                                              str.split(str(lr), '.')[-1],
+                                              str(epochs_till_now).zfill(2)
+                                              )
 
-        # the follwoing piece of codw needs to be worked on !!! LATEST DEVELOPMENT TILL HERE
         if ((epoch+1)%save_interval == 0) or test_only:
             save_path = os.path.join(config.models_dir, '{}.pth'.format(save_name))
             
