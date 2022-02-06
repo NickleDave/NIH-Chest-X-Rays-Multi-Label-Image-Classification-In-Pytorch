@@ -211,9 +211,9 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
 
     return val_loss_list, running_val_loss/float(len(val_loader.dataset)), roc_auc
 
-def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
+def fit(device, train_loader, val_loader, test_loader, model,
         loss_fn, optimizer, losses_dict, epochs_till_now, epochs,
-        log_interval, save_interval, lr, bs, stage, test_only = False):
+        log_interval, save_interval, test_only = False):
     '''
     Trains or Tests the 'model' on the given 'train_loader', 'val_loader', 'test_loader' for 'epochs' number of epochs.
     If training ('test_only' = False), it saves the optimized 'model' and  the loss plots ,after every 'save_interval'th epoch.
