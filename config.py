@@ -5,8 +5,8 @@ disease_classes_pkl_path = 'disease_classes.pickle'
 models_dir               = 'models'
 
 from torchvision import transforms
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
+normalize = transforms.Normalize(mean=[0.5055535435676575, 0.5055535435676575, 0.5055535435676575],
+                                 std=[0.252083420753479,0.252083420753479,0.252083420753479])
 
 # transforms.RandomHorizontalFlip() not used because some disease might be more likely to the present in a specific lung (lelf/rigth)
 transform = transforms.Compose([transforms.ToPILImage(), 
