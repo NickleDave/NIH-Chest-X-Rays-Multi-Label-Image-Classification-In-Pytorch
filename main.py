@@ -26,7 +26,7 @@ parser.add_argument('--bs', type = int, default = 128, help = 'batch size')
 parser.add_argument('--lr', type = float, default = 1e-5, help = 'Learning Rate for the optimizer')
 parser.add_argument('--num-workers', type=int, default=4)
 parser.add_argument('--stage', type = int, default = 1, help = 'Stage, it decides which layers of the Neural Net to train')
-parser.add_argument('--epochs', type = int, default=100)
+parser.add_argument('--epochs', type = int, default=20)
 parser.add_argument('--loss_func', type = str, default = 'FocalLoss', choices = {'BCE', 'FocalLoss'}, help = 'loss function')
 parser.add_argument('-r','--resume', action = 'store_true') # args.resume will return True if -r or --resume is used in the terminal
 parser.add_argument('--ckpt', type = str, help = 'Path of the ckeckpoint that you wnat to load')
