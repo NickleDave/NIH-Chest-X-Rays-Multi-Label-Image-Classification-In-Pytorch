@@ -233,6 +233,8 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
 
     print('\n======= Training after epoch #{}... =======\n'.format(epochs_till_now))
 
+    best_roc_auc = 0.
+
     for epoch in range(epochs):
         epochs_till_now += 1
         print('============ EPOCH {}/{} ============'.format(epochs_till_now, final_epoch))
@@ -270,17 +272,24 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
 
         if ((epoch+1)%save_interval == 0) or test_only:
             save_path = os.path.join(config.models_dir, '{}.pth'.format(save_name))
-            
-            torch.save({
-            'epochs': epochs_till_now,
-            'model': model, # it saves the whole model
-            'losses_dict': {'epoch_train_loss': epoch_train_loss,
-                            'epoch_val_loss': epoch_val_loss,
-                            'total_train_loss_list': total_train_loss_list,
-                            'total_val_loss_list': total_val_loss_list}
-            }, save_path)
+            ckpt = {
+                'epochs': epochs_till_now,
+                'model': model, # it saves the whole model
+                'losses_dict': {'epoch_train_loss': epoch_train_loss,
+                                'epoch_val_loss': epoch_val_loss,
+                                'total_train_loss_list': total_train_loss_list,
+                                'total_val_loss_list': total_val_loss_list}
+            }
+            torch.save(ckpt, save_path)
             
             print('\ncheckpoint {} saved'.format(save_path))
+
+            if roc_auc > best_roc_auc:
+                # save separate *best* checkpoint
+                best_roc_auc = roc_auc
+                save_path = os.path.join(config.models_dir, '{}.best.pth'.format(save_name))
+                print(f"ROC AUC improved, saving 'best' checkpoint: {save_path}")
+                torch.save(ckpt, save_path)
 
             make_plot(epoch_train_loss, epoch_val_loss, total_train_loss_list, total_val_loss_list, save_name)
             print('loss plots saved !!!')
