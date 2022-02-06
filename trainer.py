@@ -189,7 +189,13 @@ def fit(device, train_loader, val_loader, model,
     Trains or Tests the 'model' on the given 'train_loader', 'val_loader', 'test_loader' for 'epochs' number of epochs.
     If training ('test_only' = False), it saves the optimized 'model' and  the loss plots ,after every 'save_interval'th epoch.
     '''
-    epoch_train_loss, epoch_val_loss, total_train_loss_list, total_val_loss_list = losses_dict['epoch_train_loss'], losses_dict['epoch_val_loss'], losses_dict['total_train_loss_list'], losses_dict['total_val_loss_list']
+    (epoch_train_loss,
+     epoch_val_loss,
+     total_train_loss_list,
+     total_val_loss_list) = (losses_dict['epoch_train_loss'],
+                             losses_dict['epoch_val_loss'],
+                             losses_dict['total_train_loss_list'],
+                             losses_dict['total_val_loss_list'])
 
     final_epoch = epochs_till_now + epochs
 
