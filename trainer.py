@@ -231,19 +231,13 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
         print('test_roc_auc: {} in {} mins {} secs'.format(test_roc_auc, int(m), int(s)))
         sys.exit()
 
-    starting_epoch  = epochs_till_now
     print('\n======= Training after epoch #{}... =======\n'.format(epochs_till_now))
 
     for epoch in range(epochs):
-
-        if starting_epoch != epochs_till_now:
-            # resample the train_loader and val_loader
-            train_loader, val_loader = get_resampled_train_val_dataloaders(XRayTrain_dataset, config.transform, bs = bs)
-
         epochs_till_now += 1
         print('============ EPOCH {}/{} ============'.format(epochs_till_now, final_epoch))
         epoch_start_time = time.time()
-        
+
         print('TRAINING')
         train_loss, mean_running_train_loss = train_epoch(device,
                                                           train_loader,
