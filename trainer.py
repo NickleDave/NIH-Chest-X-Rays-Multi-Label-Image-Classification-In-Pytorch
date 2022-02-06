@@ -2,13 +2,11 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-import sys, os, time, random, pdb
+import sys, os, time
 import numpy as np
-import pandas as pd
-import torch.nn.functional as F
 import torch
 import pickle
-import tqdm, pdb
+import tqdm
 from sklearn.metrics import roc_auc_score
 
 import config
@@ -119,8 +117,8 @@ def train_epoch(device, train_loader, model, loss_fn, optimizer, epochs_till_now
     train_loss_list = []
 
     start_time = time.time()
-    for batch_idx, (img, target) in enumerate(train_loader):
-        # print(type(img), img.shape) # , np.unique(img))
+    pbar = tqdm(train_loader)
+    for batch_idx, (img, target) in enumerate(pbar):
 
         img = img.to(device)
         target = target.to(device)
@@ -133,22 +131,23 @@ def train_epoch(device, train_loader, model, loss_fn, optimizer, epochs_till_now
 
         loss.backward()
         optimizer.step()
-        
-        if (batch_idx+1)%log_interval == 0:
-            # batch metric evaluation
-# #             out_detached = out.detach()
-# #             batch_roc_auc_score = get_roc_auc_score(target, out_detached.numpy())
-            # 'out' is a torch.Tensor and 'roc_auc_score' function first tries to convert it into a numpy array, but since 'out' has requires_grad = True, it throws an error
-            # RuntimeError: Can't call numpy() on Variable that requires grad. Use var.detach().numpy() instead. 
-            # so we have to 'detach' the 'out' tensor and then convert it into a numpy array to avoid the error !  
 
-            batch_time = time.time() - start_time
-            m, s = divmod(batch_time, 60)
-            print('Train Loss for batch {}/{} @epoch{}/{}: {} in {} mins {} secs'.format(str(batch_idx+1).zfill(3), str(len(train_loader)).zfill(3), epochs_till_now, final_epoch, round(loss.item(), 5), int(m), round(s, 2)))
+        batch_time = time.time() - start_time
+        m, s = divmod(batch_time, 60)
+        pbar.set_description(
+            'Train Loss for batch {}/{} @epoch{}/{}: {} in {} mins {} secs'.format(
+                str(batch_idx+1).zfill(3),
+                str(len(train_loader)).zfill(3),
+                epochs_till_now,
+                final_epoch,
+                round(loss.item(), 5),
+                int(m),
+                round(s, 2))
+        )
         
         start_time = time.time()
             
-    return train_loss_list, running_train_loss/float(len(train_loader.dataset))
+    return train_loss_list, running_train_loss / float(len(train_loader.dataset))
 
 def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_epoch = None, log_interval = 1, test_only = False):
     '''
@@ -168,13 +167,14 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
     k=0
 
     with torch.no_grad():
-        batch_start_time = time.time()    
-        for batch_idx, (img, target) in enumerate(val_loader):
+        batch_start_time = time.time()
+        pbar = tqdm(val_loader)
+        for batch_idx, (img, target) in enumerate(pbar):
             if test_only:
                 per = ((batch_idx+1)/len(val_loader))*100
                 a_, b_ = divmod(per, 1)
-                print(f'{str(batch_idx+1).zfill(len(str(len(val_loader))))}/{str(len(val_loader)).zfill(len(str(len(val_loader))))} ({str(int(a_)).zfill(2)}.{str(int(100*b_)).zfill(2)} %)', end = '\r')
-    #         print(type(img), img.shape) # , np.unique(img))
+                pbar.set_description(
+                    f'{str(batch_idx+1).zfill(len(str(len(val_loader))))}/{str(len(val_loader)).zfill(len(str(len(val_loader))))} ({str(int(a_)).zfill(2)}.{str(int(100*b_)).zfill(2)} %)', end = '\r')
 
             img = img.to(device)
             target = target.to(device)    
@@ -189,13 +189,20 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
             gt[   k: k + out.shape[0], :] = target.cpu()
             k += out.shape[0]
 
-            if ((batch_idx+1)%log_interval == 0) and (not test_only): # only when ((batch_idx + 1) is divisible by log_interval) and (when test_only = False)
-                # batch metric evaluation
-#                 batch_roc_auc_score = get_roc_auc_score(target, out)
-
+            if ((batch_idx+1)%log_interval == 0) and (not test_only):
+                # ^^ only when ((batch_idx + 1) is divisible by log_interval) and (when test_only = False)
                 batch_time = time.time() - batch_start_time
                 m, s = divmod(batch_time, 60)
-                print('Val Loss   for batch {}/{} @epoch{}/{}: {} in {} mins {} secs'.format(str(batch_idx+1).zfill(3), str(len(val_loader)).zfill(3), epochs_till_now, final_epoch, round(loss.item(), 5), int(m), round(s, 2)))
+                pbar.set_description(
+                    'Val Loss   for batch {}/{} @epoch{}/{}: {} in {} mins {} secs'.format(
+                        str(batch_idx+1).zfill(3),
+                        str(len(val_loader)).zfill(3),
+                        epochs_till_now,
+                        final_epoch,
+                        round(loss.item(), 5),
+                        int(m),
+                        round(s, 2))
+                )
             
             batch_start_time = time.time()    
             
@@ -246,9 +253,22 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
         epoch_start_time = time.time()
         
         print('TRAINING')
-        train_loss, mean_running_train_loss          =  train_epoch(device, train_loader, model, loss_fn, optimizer, epochs_till_now, final_epoch, log_interval)
+        train_loss, mean_running_train_loss = train_epoch(device,
+                                                          train_loader,
+                                                          model,
+                                                          loss_fn,
+                                                          optimizer,
+                                                          epochs_till_now,
+                                                          final_epoch,
+                                                          log_interval)
         print('VALIDATION')
-        val_loss, mean_running_val_loss, roc_auc     =  val_epoch(device, val_loader, model, loss_fn                             , epochs_till_now, final_epoch, log_interval)
+        val_loss, mean_running_val_loss, roc_auc = val_epoch(device,
+                                                             val_loader,
+                                                             model,
+                                                             loss_fn,
+                                                             epochs_till_now,
+                                                             final_epoch,
+                                                             log_interval)
         
         epoch_train_loss.append(mean_running_train_loss)
         epoch_val_loss.append(mean_running_val_loss)
@@ -265,7 +285,10 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
             torch.save({
             'epochs': epochs_till_now,
             'model': model, # it saves the whole model
-            'losses_dict': {'epoch_train_loss': epoch_train_loss, 'epoch_val_loss': epoch_val_loss, 'total_train_loss_list': total_train_loss_list, 'total_val_loss_list': total_val_loss_list}
+            'losses_dict': {'epoch_train_loss': epoch_train_loss,
+                            'epoch_val_loss': epoch_val_loss,
+                            'total_train_loss_list': total_train_loss_list,
+                            'total_val_loss_list': total_val_loss_list}
             }, save_path)
             
             print('\ncheckpoint {} saved'.format(save_path))
@@ -281,39 +304,3 @@ def fit(device, XRayTrain_dataset, train_loader, val_loader, test_loader, model,
         m, s = divmod(total_epoch_time, 60)
         h, m = divmod(m, 60)
         print('\nEpoch {}/{} took {} h {} m'.format(epochs_till_now, final_epoch, int(h), int(m)))
-
-
-
-'''   
-def pred_n_write(test_loader, model, save_name):
-    res = np.zeros((3000, 15), dtype = np.float32)
-    k=0
-    for batch_idx, img in tqdm.tqdm(enumerate(test_loader)):
-        model.eval()
-        with torch.no_grad():
-            pred = torch.sigmoid(model(img))
-            # print(k)
-            res[k: k + pred.shape[0], :] = pred
-            k += pred.shape[0]
-            
-    # write csv
-    print('populating the csv')
-    submit = pd.DataFrame()
-    submit['ImageID'] = [str.split(i, os.sep)[-1] for i in test_loader.dataset.data_list]
-    with open('disease_classes.pickle', 'rb') as handle:
-        disease_classes = pickle.load(handle)
-    
-    for idx, col in enumerate(disease_classes):
-        if col == 'Hernia':
-            submit['Hern'] = res[:, idx]
-        elif col == 'Pleural_Thickening':
-            submit['Pleural_thickening'] = res[:, idx]
-        elif col == 'No Finding':
-            submit['No_findings'] = res[:, idx]
-        else:
-            submit[col] = res[:, idx]
-    rand_num = str(random.randint(1000, 9999))
-    csv_name = '{}___{}.csv'.format(save_name, rand_num)
-    submit.to_csv('res/' + csv_name, index = False)
-    print('{} saved !'.format(csv_name))
-'''
