@@ -1,21 +1,13 @@
 import argparse
-import os, pdb, sys, glob, time
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
-import cv2
+import os, sys, time
 
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import torchvision.models as models 
 
-# import custom dataset classes
 from datasets import XRaysTrainDataset  
 from datasets import XRaysTestDataset
-
-# import neccesary libraries for defining the optimizers
-import torch.optim as optim
-
 from trainer import fit
 import config
 
@@ -27,8 +19,8 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 print(f'\ndevice: {device}')
     
 parser = argparse.ArgumentParser(description='Following are the arguments that can be passed form the terminal itself ! Cool huh ? :D')
-parser.add_argument('--data_path', type = str, default = 'NIH Chest X-rays', help = 'This is the path of the training data')
-parser.add_argument('--model', type='str', default='resnet50', choices={'alexnet', 'vgg16', 'resnet50'})
+parser.add_argument('--data_path', type=str, default = 'NIH Chest X-rays', help = 'This is the path of the training data')
+parser.add_argument('--model', type=str, default='resnet50', choices={'alexnet', 'vgg16', 'resnet50'})
 parser.add_argument('--pretrained', action='store_true')
 parser.add_argument('--bs', type = int, default = 128, help = 'batch size')
 parser.add_argument('--lr', type = float, default = 1e-5, help = 'Learning Rate for the optimizer')
