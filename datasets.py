@@ -178,7 +178,7 @@ class XRaysTrainDataset(Dataset):
         return merged_df
     
     def get_train_val_list(self):
-        f = open(os.path.join('data', 'NIH Chest X-rays', 'train_val_list.txt'), 'r')
+        f = open(os.path.join(self.data_dir, 'train_val_list.txt'), 'r')
         train_val_list = str.split(f.read(), '\n')
         return train_val_list
 
@@ -271,7 +271,7 @@ class XRaysTestDataset(Dataset):
         return test_df
 
     def get_test_list(self):
-        f = open( os.path.join('data', 'NIH Chest X-rays', 'test_list.txt'), 'r')
+        f = open( os.path.join(self.data_dir, 'test_list.txt'), 'r')
         test_list = str.split(f.read(), '\n')
         return test_list
 
