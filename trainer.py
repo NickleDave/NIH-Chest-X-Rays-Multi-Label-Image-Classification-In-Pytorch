@@ -281,11 +281,9 @@ def fit(device, train_loader, val_loader, model,
         print('\nEpoch {}/{} took {} h {} m'.format(epochs_till_now, final_epoch, int(h), int(m)))
 
 
-def eval(device, test_loader, model,
-         loss_fn, log_interval):
+def eval_(device, test_loader, model, loss_fn, log_interval):
     '''
-    Trains or Tests the 'model' on the given 'train_loader', 'val_loader', 'test_loader' for 'epochs' number of epochs.
-    If training ('test_only' = False), it saves the optimized 'model' and  the loss plots ,after every 'save_interval'th epoch.
+    Tests the 'model' on the given 'test_loader'.
     '''
     print('\n======= Testing... =======\n')
     test_start_time = time.time()
