@@ -67,19 +67,17 @@ class XRaysTrainDataset(Dataset):
             os.mkdir(pkl_dir_path)
 
     def get_train_val_df(self):
-
-        # get the list of train_val data 
+        """get pandas.DataFrame representing dataset;
+        attempts to reduce class imbalance
+        """
         train_val_list = self.get_train_val_list()
 
         train_val_df = pd.DataFrame()
         print('\nbuilding train_val_df...')
         for i in tqdm(range(self.df.shape[0])):
             filename  = os.path.basename(self.df.iloc[i,0])
-            # print('filename: ', filename)
             if filename in train_val_list:
                 train_val_df = train_val_df.append(self.df.iloc[i:i+1, :])
-
-        # print('train_val_df.shape: {}'.format(train_val_df.shape))
 
         return train_val_df
 
@@ -88,27 +86,24 @@ class XRaysTrainDataset(Dataset):
 
         img = cv2.imread(row['image_links'])
         labels = str.split(row['Finding Labels'], '|')
-        
+
         target = torch.zeros(len(self.all_classes))
         for lab in labels:
             lab_idx = self.all_classes.index(lab)
             target[lab_idx] = 1            
-    
+
         if self.transform is not None:
             img = self.transform(img)
     
         return img, target
         
     def choose_the_indices(self):
-        
-        max_examples_per_class = 10000 # its the maximum number of examples that would be sampled in the training set for any class
+        max_examples_per_class = 10000
         the_chosen = []
         all_classes = {}
         length = len(self.train_val_df)
-        # for i in tqdm(range(len(merged_df))):
-        print('\nSampling the huuuge training dataset')
+        print('\nSampling training dataset')
         for i in tqdm(list(np.random.choice(range(length),length, replace = False))):
-            
             temp = str.split(self.train_val_df.iloc[i, :]['Finding Labels'], '|')
 
             # special case of ultra minority hernia. we will use all the images with 'Hernia' tagged in them.
@@ -131,7 +126,7 @@ class XRaysTrainDataset(Dataset):
                             bool_lis[idx] = True
                     else:
                         bool_lis[idx] = True
-                # if all lables under upper limit, append
+                # if all labels under upper limit, append
                 if sum(bool_lis) == len(temp):                    
                     the_chosen.append(i)
                     # maintain count
@@ -149,20 +144,8 @@ class XRaysTrainDataset(Dataset):
                             all_classes[t] += 1
                             the_chosen.append(i)
 
-        # print('len(all_classes): ', len(all_classes))
-        # print('all_classes: ', all_classes)
-        # print('len(the_chosen): ', len(the_chosen))
-        
-        '''
-        if len(the_chosen) != len(set(the_chosen)):
-            print('\nGadbad !!!')
-            print('and the difference is: ', len(the_chosen) - len(set(the_chosen)))
-        else:
-            print('\nGood')
-        '''
-
         return the_chosen, sorted(list(all_classes)), all_classes
-    
+
     def get_df(self):
         csv_path = os.path.join(self.data_dir, 'Data_Entry_2017.csv')
         print('\n{} found: {}'.format(csv_path, os.path.exists(csv_path)))
@@ -178,7 +161,7 @@ class XRaysTrainDataset(Dataset):
         return merged_df
     
     def get_train_val_list(self):
-        f = open(os.path.join('data', 'NIH Chest X-rays', 'train_val_list.txt'), 'r')
+        f = open(os.path.join(self.data_dir, 'train_val_list.txt'), 'r')
         train_val_list = str.split(f.read(), '\n')
         return train_val_list
 
@@ -271,50 +254,9 @@ class XRaysTestDataset(Dataset):
         return test_df
 
     def get_test_list(self):
-        f = open( os.path.join('data', 'NIH Chest X-rays', 'test_list.txt'), 'r')
+        f = open( os.path.join(self.data_dir, 'test_list.txt'), 'r')
         test_list = str.split(f.read(), '\n')
         return test_list
 
     def __len__(self):
         return len(self.test_df)
-
-
-
-
-
-
-'''
-# prepare the test dataset
-import random
-class XRaysTestDataset2(Dataset):
-    def __init__(self, test_data_dir, transform = None):
-        self.test_data_dir = test_data_dir
-        self.transform = transform
-        self.data_list = self.get_data_list(self.test_data_dir)
-        
-        self.subset = self.data_list[:1000]
-
-    def __getitem__(self, index):
-        img_path = self.data_list[index]
-        img = cv2.imread(img_path)
-        
-        if self.transform is not None:
-            img = self.transform(img)
-            
-        return img_path
-    
-    def sample(self):
-
-        random.shuffle(self.data_list)
-
-        self.subset = self.data_list[:np.random.randint(500,700)]
-
-    def __len__(self):
-        return len(self.subset)
-        
-    def get_data_list(self, data_dir):
-        data_list = []
-        for path in glob.glob(data_dir + os.sep + '*'):
-            data_list.append(path)
-        return data_list
-'''
