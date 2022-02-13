@@ -42,7 +42,7 @@ def get_roc_auc_score(y_true, y_probs):
     return GT_and_probs, roc_auc
 
 
-def make_plot(epoch_train_loss, epoch_val_loss, total_train_loss_list, total_val_loss_list, save_name):
+def make_plot(epoch_train_loss, epoch_val_loss, total_train_loss_list, total_val_loss_list):
     '''
     This function makes the following 4 different plots-
     1. mean train loss VS number of epochs
@@ -182,7 +182,7 @@ def val_epoch(device, val_loader, model, loss_fn, epochs_till_now = None, final_
 
     return val_loss_list, running_val_loss/float(len(val_loader.dataset)), roc_auc
 
-def fit(device, train_loader, val_loader, model,
+def fit(device, train_loader, val_loader, model, model_name,
         loss_fn, optimizer, losses_dict, epochs_till_now, epochs,
         log_interval, save_interval):
     '''
@@ -233,8 +233,7 @@ def fit(device, train_loader, val_loader, model,
         total_val_loss_list.extend(val_loss)
 
         if (epoch +1) % save_interval == 0:
-            save_name = model.__class__.__name__
-            save_path = os.path.join(config.models_dir, f'{save_name}.pth')
+            save_path = os.path.join(config.models_dir, f'{model_name}.pth')
             ckpt = {
                 'epochs': epochs_till_now,
                 'model': model, # it saves the whole model
@@ -250,17 +249,16 @@ def fit(device, train_loader, val_loader, model,
             if roc_auc > best_roc_auc:
                 # save separate *best* checkpoint
                 best_roc_auc = roc_auc
-                save_path = os.path.join(config.models_dir, '{}.best.pth'.format(save_name))
+                save_path = os.path.join(config.models_dir, '{}.best.pth'.format(model_name))
                 print(f"ROC AUC improved, saving 'best' checkpoint: {save_path}")
                 torch.save(ckpt, save_path)
 
             fig = make_plot(epoch_train_loss,
                             epoch_val_loss,
                             total_train_loss_list,
-                            total_val_loss_list,
-                            save_name)
+                            total_val_loss_list)
             fig.savefig(os.path.join(config.models_dir,
-                                     f'{model.__class__.__name__}.losses_{save_name}.png')
+                                     f'{model.__class__.__name__}.losses_{model_name}.png')
                         )
             print('loss plots saved !!!')
 
