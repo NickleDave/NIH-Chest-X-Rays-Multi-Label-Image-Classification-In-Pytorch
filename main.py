@@ -1,6 +1,7 @@
 import argparse
 import os, sys, time
 
+import searchnets
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -20,7 +21,7 @@ print(f'\ndevice: {device}')
     
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', type=str, default = 'NIH Chest X-rays', help = 'This is the path of the training data')
-parser.add_argument('--model', type=str, default='resnet50', choices={'alexnet', 'vgg16', 'resnet50'})
+parser.add_argument('--model', type=str, default='resnet50', choices={'alexnet', 'vgg16', 'resnet50', 'CORnet_S', 'CORnet_Z'})
 parser.add_argument('--pretrained', action='store_true')
 parser.add_argument('--bs', type = int, default = 128, help = 'batch size')
 parser.add_argument('--lr', type = float, default = 1e-5, help = 'Learning Rate for the optimizer')
@@ -116,6 +117,8 @@ lr = args.lr
 
 if not args.test: # training
 
+    num_classes = len(XRayTrain_dataset.all_classes)
+
     # initialize the model if not args.resume
     if not args.resume:
         print('\nnot loading checkpoint')
@@ -124,22 +127,21 @@ if not args.test: # training
         if args.model == 'resnet50':
             model = models.resnet50(pretrained=args.pretrained)
         elif args.model == 'alexnet':
-            model = models.alexnet(pretrained=args.pretrained)
+            model = models.alexnet(pretrained=args.pretrained, num_classes=num_classes)
         elif args.model == 'vgg16':
-            model = models.vgg16(pretrained=args.pretrained)
+            model = models.vgg16(pretrained=args.pretrained, num_classes=num_classes)
+        elif args.model in {'CORnet_S', 'CORnet_Z'}:
+            model = searchnets.nets.cornet.build(model_name=args.model, pretrained=args.pretrained, num_classes=num_classes)
         else:
             raise ValueError(
                 f'invalid model name: {args.model}'
             )
 
         # change the last linear layer
-        num_classes = len(XRayTrain_dataset.all_classes)
         if args.model == 'resnet50':
+            # this is how it was done in original script for resnet50
             num_ftrs = model.fc.in_features
             model.fc = nn.Linear(num_ftrs, num_classes)
-        else:
-            num_ftrs = model.classifier[6].in_features
-            model.classifier[6] = nn.Linear(num_ftrs, num_classes)
         model.to(device)
 
         if args.pretrained:  # only training 'layer2', 'layer3', 'layer4' and 'fc'
